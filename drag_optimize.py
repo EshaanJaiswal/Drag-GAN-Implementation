@@ -2,35 +2,70 @@ import torch
 from torch import optim
 from model import Generator
 from torchvision import utils
+import argparse
+import sys
+import os
+
+# 1. Interactive UI Function
+def get_points_via_ui(image_path='drag_step_00.png'):
+    print("No coordinates provided via CLI. Launching interactive picker...")
+    try:
+        import matplotlib.pyplot as plt
+        import matplotlib.image as mpimg
+        img = mpimg.imread(image_path)
+        fig, ax = plt.subplots(figsize=(8, 8))
+        ax.imshow(img)
+        ax.set_title("Click 1: Handle | Click 2: Target (Close window when done)")
+        coords = plt.ginput(2, timeout=-1)
+        plt.close()
+        
+        if len(coords) == 2:
+            hy, hx = int(coords[0][1] / 4), int(coords[0][0] / 4)
+            ty, tx = int(coords[1][1] / 4), int(coords[1][0] / 4)
+            return [hy, hx], [ty, tx]
+        else:
+            print("Error: You didn't click twice. Exiting.")
+            sys.exit(1)
+    except Exception as e:
+        print(f"\n[!] UI Failed: {e}")
+        print("[!] Run with arguments instead: python3 drag_optimize.py --handle Y X --target Y X\n")
+        sys.exit(1)
+
+# 2. Setup Argument Parser
+parser = argparse.ArgumentParser()
+parser.add_argument("--handle", type=int, nargs=2, default=None)
+parser.add_argument("--target", type=int, nargs=2, default=None)
+args = parser.parse_args()
 
 device = 'cuda'
-# g_ema should throw error because pylance checks for static types, but it will work when you run the script
-# 1. Initialize and load the model (This silences Pylance)
+torch.manual_seed(42) # Ensure we generate the SAME face every run!
+
 g_ema = Generator(1024, 512, 8).to(device)
-checkpoint = torch.load('ffhq.pt') # Make sure this path is correct
+checkpoint = torch.load('ffhq.pt') 
 g_ema.load_state_dict(checkpoint['g_ema'])
+g_ema.eval() 
 
-g_ema.eval() # Generator weights remain frozen!
-
-# 1. Generate an initial W latent code (instead of Z)
 sample_z = torch.randn(1, 512, device=device)
 with torch.no_grad():
-    # Pass Z through the mapping network to get W
     w_init = g_ema.style(sample_z) 
 
-# 2. Make our latent code a trainable parameter
 w_opt = w_init.detach().clone()
 w_opt.requires_grad = True
-
-# 3. Setup the Optimizer
-# DragGAN typically uses Adam. A learning rate around 2e-3 is a good starting point.
 optimizer = optim.Adam([w_opt], lr=0.002)
 
-# Define a fake Handle and Target point (y, x coordinates at the 256x256 resolution)
-handle_point = [120, 150] 
-target_point = [120, 170] 
+# 3. Generate and save the initial image BEFORE picking points
+with torch.no_grad():
+    initial_image, _ = g_ema([w_opt], input_is_latent=True, return_features=True, randomize_noise=False)
+    utils.save_image(initial_image, "drag_step_00.png", normalize=True, range=(-1, 1))
 
-print("Starting DragGAN Optimization Loop...")
+# 4. Determine Coordinates
+if args.handle is None or args.target is None:
+    handle_point, target_point = get_points_via_ui('drag_step_00.png')
+else:
+    handle_point = args.handle
+    target_point = args.target
+
+print(f"Starting DragGAN... Moving Handle {handle_point} to Target {target_point}")
 
 # 4. The Optimization Loop
 for step in range(50): # 50 steps is usually enough for a small drag
@@ -69,8 +104,8 @@ for step in range(50): # 50 steps is usually enough for a small drag
     
     # -----------------------------------------------------------------
     
-    if step == 0:
-        utils.save_image(image, "drag_step_00.png", normalize=True, range=(-1, 1)) #use value_range instead of range if you're using a newer version of torchvision
+    #if step == 0:
+        #utils.save_image(image, "drag_step_00.png", normalize=True, range=(-1, 1)) #use value_range instead of range if you're using a newer version of torchvision
         # initial image before optimization starts
     
     loss.backward()
