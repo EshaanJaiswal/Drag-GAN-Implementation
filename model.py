@@ -500,6 +500,7 @@ class Generator(nn.Module):
         self,
         styles,
         return_latents=False,
+        return_features = False, #Added a new parameter to return features (for DragGAN feature map)
         inject_index=None,
         truncation=1,
         truncation_latent=None,
@@ -551,6 +552,8 @@ class Generator(nn.Module):
 
         skip = self.to_rgb1(out, latent[:, 1])
 
+        
+        extracted_features = None #Initialize extracted features variable
         i = 1
         for conv1, conv2, noise1, noise2, to_rgb in zip(
             self.convs[::2], self.convs[1::2], noise[1::2], noise[2::2], self.to_rgbs
@@ -559,13 +562,20 @@ class Generator(nn.Module):
             out = conv2(out, latent[:, i + 1], noise=noise2)
             skip = to_rgb(out, latent[:, i + 2], skip)
 
+            #we are extracting features from the first convolutional layer of each block (after the first block) for DragGAN feature map
+            if return_features and out.shape[-1] == 256: #Extract features at 256x256 resolution
+                extracted_features = out.clone() #Clone the features to avoid in-place modifications
+            
             i += 2
 
         image = skip
 
-        if return_latents:
+        if return_features and return_latents:
+            return image, latent, extracted_features
+        elif return_features:
+            return image, extracted_features
+        elif return_latents:
             return image, latent
-
         else:
             return image, None
 
