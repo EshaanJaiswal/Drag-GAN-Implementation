@@ -60,23 +60,23 @@
                     </div>
                     <div class="field-row">
                         <label for="inversionLrInput">Inversion LR</label>
-                        <input id="inversionLrInput" type="number" step="0.0001" value="0.05" min="0.000001">
+                        <input id="inversionLrInput" type="number" step="any" value="0.05" min="0.000001">
                     </div>
                     <div class="field-row">
                         <label for="inversionNoiseRegInput">Noise Regularization</label>
-                        <input id="inversionNoiseRegInput" type="number" step="100" value="30000" min="0">
+                        <input id="inversionNoiseRegInput" type="number" step="any" value="30000" min="0">
                     </div>
                     <div class="field-row">
                         <label for="inversionFullresInput">Full-Res Weight</label>
-                        <input id="inversionFullresInput" type="number" step="0.01" value="1.0" min="0.000001">
+                        <input id="inversionFullresInput" type="number" step="any" value="1.0" min="0.000001">
                     </div>
                     <div class="field-row">
                         <label for="inversionLowresInput">Low-Res Weight</label>
-                        <input id="inversionLowresInput" type="number" step="0.01" value="0.25" min="0">
+                        <input id="inversionLowresInput" type="number" step="any" value="0.25" min="0">
                     </div>
                     <div class="field-row">
                         <label for="inversionGradInput">Gradient Weight</label>
-                        <input id="inversionGradInput" type="number" step="0.01" value="0.35" min="0">
+                        <input id="inversionGradInput" type="number" step="any" value="0.35" min="0">
                     </div>
                 </div>
                 <button type="submit" id="invertBtn">Invert and Create Session</button>
@@ -109,7 +109,7 @@
                     </div>
                     <div class="field-row">
                         <label for="dragLrInput">Drag LR</label>
-                        <input id="dragLrInput" type="number" step="0.0001" value="0.002" min="0.000001">
+                        <input id="dragLrInput" type="number" step="any" value="0.002" min="0.000001">
                     </div>
                 </div>
                 <button type="submit" id="dragBtn">Run Drag Optimization</button>
