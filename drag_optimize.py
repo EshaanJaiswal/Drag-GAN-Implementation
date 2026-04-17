@@ -13,6 +13,14 @@ from PIL import Image
 
 PROJECTION_CACHE_VERSION = "v3_wplus_sharp"
 
+captured_features = {} 
+
+def get_features_hook(name):
+    def hook(model, input, output):
+        # Capture and store the output tensor for that layer
+        captured_features[name] = output.detach()
+    return hook
+
 
 def save_image_compat(tensor, path):
     # torchvision changed `range` to `value_range`; support both.
@@ -20,6 +28,18 @@ def save_image_compat(tensor, path):
         utils.save_image(tensor, path, normalize=True, value_range=(-1, 1))
     except TypeError:
         utils.save_image(tensor, path, normalize=True, range=(-1, 1))
+
+
+def save_feature_map_outputs(feature_tensor, tensor_path, preview_path):
+    # Save the raw feature map for downstream use.
+    feature_cpu = feature_tensor.detach().cpu()
+    torch.save(feature_cpu, tensor_path)
+
+    # Save a quick single-channel preview image of the feature map.
+    preview = feature_tensor.detach().mean(dim=1, keepdim=True)
+    preview = preview - preview.amin(dim=(2, 3), keepdim=True)
+    preview = preview / (preview.amax(dim=(2, 3), keepdim=True) + 1e-8)
+    utils.save_image(preview.cpu(), preview_path)
 
 
 def get_points_via_console(num_points=0):
@@ -820,6 +840,14 @@ with torch.no_grad():
         randomize_noise=False,
     )
 
+initial_feature_tensor_path = "drag_step_00_features.pt"
+initial_feature_preview_path = "drag_step_00_featuremap.png"
+save_feature_map_outputs(initial_features, initial_feature_tensor_path, initial_feature_preview_path)
+print(
+    f"Saved initial feature tensor: {initial_feature_tensor_path} | "
+    f"Feature preview: {initial_feature_preview_path}"
+)
+
 feature_h, feature_w = initial_features.shape[2], initial_features.shape[3]
 validate_points(handle_points, feature_h, feature_w, "Handle")
 validate_points(target_points, feature_h, feature_w, "Target")
@@ -918,5 +946,16 @@ for step in range(50): # 50 steps is usually enough for a small drag
         print(f"Step {step} | Loss: {loss.item():.4f} | Handles: {handle_points}")
         
     if step == 49:
-        save_image_compat(image, "drag_step_49.png")
-        print(f"Optimization complete. Check {point_picker_image} and drag_step_49.png!")
+        final_image_path = "drag_step_49.png"
+        final_feature_tensor_path = "drag_step_49_features.pt"
+        final_feature_preview_path = "drag_step_49_featuremap.png"
+
+        save_image_compat(image, final_image_path)
+        save_feature_map_outputs(features, final_feature_tensor_path, final_feature_preview_path)
+
+        print(
+            "Optimization complete. "
+            f"Saved final image: {final_image_path} | "
+            f"Feature tensor: {final_feature_tensor_path} | "
+            f"Feature preview: {final_feature_preview_path}"
+        )
