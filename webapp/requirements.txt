@@ -1,0 +1,4 @@
+flask>=3.0.0
+pillow>=9.0.0
+torch
+torchvision

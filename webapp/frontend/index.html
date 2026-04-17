@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DragGAN Webapp</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <header class="hero">
+        <div>
+            <h1>DragGAN Workbench</h1>
+            <p>Generate or invert, click handle-target pairs, drag features, and inspect input/output feature maps.</p>
+        </div>
+        <div id="healthBadge" class="health-badge">Checking backend...</div>
+    </header>
+
+    <main class="layout">
+        <section class="panel controls-panel">
+            <h2>Source Setup</h2>
+
+            <div class="mode-switch">
+                <label>
+                    <input type="radio" name="sourceMode" value="generate" checked>
+                    Generate
+                </label>
+                <label>
+                    <input type="radio" name="sourceMode" value="invert">
+                    Invert Upload
+                </label>
+            </div>
+
+            <form id="generateForm" class="stack-form">
+                <div class="field-row">
+                    <label for="seedInput">Seed (optional)</label>
+                    <input id="seedInput" type="number" placeholder="Random if empty">
+                </div>
+                <div class="field-row">
+                    <label for="generationStepsInput">Generation Steps</label>
+                    <input id="generationStepsInput" type="number" value="1" min="1">
+                </div>
+                <button type="submit" id="generateBtn">Create Generated Session</button>
+            </form>
+
+            <form id="invertForm" class="stack-form hidden">
+                <div class="field-row">
+                    <label for="imageInput">Upload Image</label>
+                    <input id="imageInput" type="file" accept="image/*">
+                </div>
+                <div class="field-grid">
+                    <div class="field-row">
+                        <label for="inversionStepsInput">Inversion Steps</label>
+                        <input id="inversionStepsInput" type="number" value="900" min="1">
+                    </div>
+                    <div class="field-row">
+                        <label for="inversionLrInput">Inversion LR</label>
+                        <input id="inversionLrInput" type="number" step="0.0001" value="0.05" min="0.000001">
+                    </div>
+                    <div class="field-row">
+                        <label for="inversionNoiseRegInput">Noise Regularization</label>
+                        <input id="inversionNoiseRegInput" type="number" step="100" value="30000" min="0">
+                    </div>
+                    <div class="field-row">
+                        <label for="inversionFullresInput">Full-Res Weight</label>
+                        <input id="inversionFullresInput" type="number" step="0.01" value="1.0" min="0.000001">
+                    </div>
+                    <div class="field-row">
+                        <label for="inversionLowresInput">Low-Res Weight</label>
+                        <input id="inversionLowresInput" type="number" step="0.01" value="0.25" min="0">
+                    </div>
+                    <div class="field-row">
+                        <label for="inversionGradInput">Gradient Weight</label>
+                        <input id="inversionGradInput" type="number" step="0.01" value="0.35" min="0">
+                    </div>
+                </div>
+                <button type="submit" id="invertBtn">Invert and Create Session</button>
+            </form>
+
+            <div id="statusBar" class="status-bar">Create a session to begin.</div>
+        </section>
+
+        <section class="panel picker-panel">
+            <h2>Point Picker</h2>
+            <p class="panel-note">Click handle then target for each pair. You can add multiple pairs.</p>
+
+            <div class="canvas-wrap">
+                <canvas id="pickerCanvas" width="1024" height="1024"></canvas>
+            </div>
+
+            <div class="picker-actions">
+                <button id="undoPairBtn" type="button">Undo Last Pair</button>
+                <button id="clearPairsBtn" type="button">Clear Pairs</button>
+                <span id="pairCount" class="pair-count">0 pairs</span>
+            </div>
+
+            <ol id="pairList" class="pair-list"></ol>
+
+            <form id="dragForm" class="stack-form">
+                <div class="field-grid">
+                    <div class="field-row">
+                        <label for="dragStepsInput">Drag Steps</label>
+                        <input id="dragStepsInput" type="number" value="50" min="1">
+                    </div>
+                </div>
+                <button type="submit" id="dragBtn">Run Drag Optimization</button>
+            </form>
+        </section>
+
+        <section class="panel output-panel">
+            <h2>Results</h2>
+
+            <div id="sourceCard" class="media-card hidden">
+                <h3>Source Upload</h3>
+                <img id="sourceImage" alt="Uploaded source image preview">
+            </div>
+
+            <div class="media-card">
+                <h3>Initial Image</h3>
+                <img id="initialImage" alt="Initial generated or projected image">
+            </div>
+
+            <div class="media-card">
+                <h3>Initial Feature Map</h3>
+                <img id="initialFeatureMap" alt="Initial feature map preview">
+                <a id="initialFeatureTensorLink" class="download-link" href="#" target="_blank" rel="noopener">Download Initial Feature Tensor (.pt)</a>
+            </div>
+
+            <div class="media-card">
+                <h3>Output Image</h3>
+                <img id="outputImage" alt="Output image after dragging">
+            </div>
+
+            <div class="media-card">
+                <h3>Output Feature Map</h3>
+                <img id="outputFeatureMap" alt="Output feature map preview">
+                <a id="outputFeatureTensorLink" class="download-link" href="#" target="_blank" rel="noopener">Download Output Feature Tensor (.pt)</a>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
