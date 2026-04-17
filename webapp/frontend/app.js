@@ -37,6 +37,7 @@ const els = {
 
     dragForm: document.getElementById("dragForm"),
     dragStepsInput: document.getElementById("dragStepsInput"),
+    dragLrInput: document.getElementById("dragLrInput"),
     dragBtn: document.getElementById("dragBtn"),
 
     sourceCard: document.getElementById("sourceCard"),
@@ -412,6 +413,7 @@ els.dragForm.addEventListener("submit", async (event) => {
     }
 
     const dragSteps = Math.max(1, Number.parseInt(els.dragStepsInput.value, 10) || 50);
+    const dragLr = Number.parseFloat(els.dragLrInput.value) || 0.002;
 
     setBusy(true);
     setStatus("Running drag optimization...", "info");
@@ -421,6 +423,7 @@ els.dragForm.addEventListener("submit", async (event) => {
             session_id: state.sessionId,
             pairs: state.pairs,
             drag_steps: dragSteps,
+            drag_lr: dragLr,
         });
 
         applyOutputLinks(data);

@@ -23,9 +23,6 @@ if str(PROJECT_ROOT) not in sys.path:
 from model import Generator
 
 
-DEFAULT_DRAG_LR = 0.002
-
-
 def save_image_compat(tensor: torch.Tensor, path: Path) -> None:
     try:
         utils.save_image(tensor, str(path), normalize=True, value_range=(-1, 1))
@@ -601,16 +598,19 @@ class DragEngine:
         session_id: str,
         pairs: Sequence[Dict[str, Any]],
         drag_steps: int,
+        drag_lr: float,
     ) -> Dict[str, Any]:
         if drag_steps < 1:
             raise ValueError("drag_steps must be at least 1.")
+        if drag_lr <= 0:
+            raise ValueError("drag_lr must be positive.")
 
         session = self._get_session(session_id)
 
         with self._gpu_lock:
             w_opt = session.w.detach().clone()
             w_opt.requires_grad = True
-            optimizer = optim.Adam([w_opt], lr=DEFAULT_DRAG_LR)
+            optimizer = optim.Adam([w_opt], lr=drag_lr)
 
             handle_points, target_points = self._pairs_to_feature_points(
                 pairs,
@@ -701,7 +701,7 @@ class DragEngine:
                 session.noises,
                 session.session_id,
                 "output",
-                metadata={"mode": session.mode, "drag_steps": int(drag_steps)},
+                metadata={"mode": session.mode, "drag_steps": int(drag_steps), "drag_lr": float(drag_lr)},
             )
 
             session.last_output_image_url = output_image_url
@@ -723,6 +723,7 @@ class DragEngine:
         return {
             "session_id": session.session_id,
             "drag_steps": int(drag_steps),
+            "drag_lr": float(drag_lr),
             "output_image_url": output_image_url,
             "output_feature_map_url": output_feature_map_url,
             "output_feature_tensor_url": output_feature_tensor_url,

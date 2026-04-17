@@ -220,12 +220,14 @@ def run_drag():
             return fail("pairs must be a list.", status_code=400)
 
         drag_steps = parse_int(payload.get("drag_steps", 50), "drag_steps", min_value=1)
+        drag_lr = parse_float(payload.get("drag_lr", 0.002), "drag_lr", min_value=1e-12)
 
         engine = get_engine()
         result = engine.run_drag(
             session_id=str(session_id),
             pairs=pairs,
             drag_steps=drag_steps,
+            drag_lr=drag_lr,
         )
         return ok(result)
     except ValueError as exc:

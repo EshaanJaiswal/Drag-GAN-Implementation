@@ -8,7 +8,7 @@ It does not modify the original project scripts.
 - Generate an image and create a drag session.
 - Upload an image and run GAN inversion to create a drag session.
 - Select multiple handle-target point pairs directly in the browser.
-- Run drag optimization with configurable drag steps.
+- Run drag optimization with configurable drag steps and learning rate.
 - Save and preview feature maps for both initial (input/generation) and output states.
 - Download raw feature tensors (`.pt`) for initial and output states.
 
@@ -72,6 +72,7 @@ Then open:
     - `session_id` (string)
     - `pairs` (array of `{ handle: {x, y}, target: {x, y} }`)
     - `drag_steps` (int >= 1)
+    - `drag_lr` (float > 0)
 
 ## Notes for GPU Servers
 
